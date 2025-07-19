@@ -688,6 +688,7 @@
                                         style={{
                                             width: '112px', /* Explicitly set width */
                                             height: '112px', /* Explicitly set height */
+                                            borderRadius: '50%', /* Explicitly set border-radius to ensure perfect circle */
                                             backgroundColor: 'rgba(255,255,255,0.1)',
                                             backgroundImage: customBadge1DataUrl && !customBadge1DataUrl.startsWith('data:image/svg+xml') ? `url(${customBadge1DataUrl})` : 'none',
                                             backgroundSize: 'cover', /* Changed to cover for raster images */
@@ -697,7 +698,9 @@
                                         {customBadge1DataUrl && customBadge1DataUrl.startsWith('data:image/svg+xml') ? (
                                             <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge1DataUrl }} />
                                         ) : (
-                                            !customBadge1DataUrl && ( // Default Candle SVG Icon if no custom image
+                                            customBadge1DataUrl ? ( // If it's a raster image
+                                                <img src={customBadge1DataUrl} alt="Custom Badge 1" className="w-full h-full object-cover" />
+                                            ) : ( // Default Candle SVG Icon if no custom image
                                                 <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
                                                     width="142.000000pt" height="142.000000pt" viewBox="0 0 142.000000 142.000000"
                                                     preserveAspectRatio="xMidYMid meet" className="w-full h-full" fill="currentColor" style={{ color: labelColor }}>
@@ -716,6 +719,7 @@
                                         style={{
                                             width: '112px', /* Explicitly set width */
                                             height: '112px', /* Explicitly set height */
+                                            borderRadius: '50%', /* Explicitly set border-radius to ensure perfect circle */
                                             backgroundColor: 'rgba(255,255,255,0.1)',
                                             backgroundImage: customBadge2DataUrl && !customBadge2DataUrl.startsWith('data:image/svg+xml') ? `url(${customBadge2DataUrl})` : 'none',
                                             backgroundSize: 'cover', /* Changed to cover for raster images */
@@ -725,7 +729,9 @@
                                         {customBadge2DataUrl && customBadge2DataUrl.startsWith('data:image/svg+xml') ? (
                                             <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge2DataUrl }} />
                                         ) : (
-                                            !customBadge2DataUrl && ( // Default Crucifix SVG Icon if no custom image
+                                            customBadge2DataUrl ? ( // If it's a raster image
+                                                <img src={customBadge2DataUrl} alt="Custom Badge 2" className="w-full h-full object-cover" />
+                                            ) : ( // Default Crucifix SVG Icon if no custom image
                                                 <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
                                                     width="142.000000pt" height="142.000000pt" viewBox="0 0 142.000000 142.000000"
                                                     preserveAspectRatio="xMidYMid meet" className="w-full h-full" fill="currentColor" style={{ color: labelColor }}>
