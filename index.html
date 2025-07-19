@@ -82,13 +82,31 @@
             const [rank, setRank] = useState('PARANORMAL INVESTIGATOR');
             const [prestige, setPrestige] = useState(1);
             const [actualLevel, setActualLevel] = useState(97);
-            const [preferredGear, setPreferredGear] = useState('Spirit Box, EMF Reader, Flashlight');
-            const [specialization, setSpecialization] = useState('Ghost Type Identification');
+
+            // New states for the dynamic input fields
+            const [selectedCategory, setSelectedCategory] = useState('equipment'); // 'equipment', 'specialization', 'teamName'
+            const [selectedEquipment, setSelectedEquipment] = useState(['Spirit Box', 'EMF Reader', 'Flashlight']); // Max 3
+            const [selectedSpecialization, setSelectedSpecialization] = useState('Ghost Type Identification');
+            const [teamNameInput, setTeamNameInput] = useState('Ghost Hunters Inc.');
+
             const [profileImage, setProfileImage] = useState('https://placehold.co/250x350/000000/FFFFFF?text=Upload+Image'); // Placeholder
-            const [teamName, setTeamName] = useState('Ghost Hunters Inc.');
-            const [idNumber, setIdNumber] = useState('PHASMO-001');
 
             const idCardRef = useRef(null);
+
+            // Data lists for dropdowns and checkboxes
+            const EQUIPMENT_LIST = [
+                'Spirit Box', 'EMF Reader', 'Flashlight', 'UV Light', 'Video Camera',
+                'Photo Camera', 'Tripod', 'Ghost Writing Book', 'Salt', 'Smudge Sticks',
+                'Lighter', 'Candle', 'Crucifix', 'Motion Sensor', 'Sound Sensor',
+                'Thermomenter', 'Head Mounted Camera', 'Sanity Pills', 'DOTS Projector',
+                'Igniter'
+            ];
+
+            const SPECIALIZATION_LIST = [
+                'Ghost Type Identification', 'Evidence Collector', 'Sanity Manager',
+                'Paranormal Photography', 'Spirit Box Expert', 'EMF Specialist',
+                'Thermals Expert', 'Cursed Objects Finder', 'Team Leader', 'Support'
+            ];
 
             const handleImageUpload = (event) => {
                 const file = event.target.files[0];
@@ -99,6 +117,26 @@
                     };
                     reader.readAsDataURL(file);
                 }
+            };
+
+            // Handle equipment checkbox changes (max 3)
+            const handleEquipmentChange = (e) => {
+                const value = e.target.value;
+                const isChecked = e.target.checked;
+
+                setSelectedEquipment(prev => {
+                    if (isChecked) {
+                        if (prev.length < 3) {
+                            return [...prev, value];
+                        } else {
+                            // If already 3, prevent checking more
+                            e.target.checked = false; // Uncheck the box if limit reached
+                            return prev;
+                        }
+                    } else {
+                        return prev.filter(item => item !== value);
+                    }
+                });
             };
 
             const downloadIdCard = () => {
@@ -147,27 +185,80 @@
                                 <label htmlFor="actualLevel" className="block text-sm font-medium text-gray-300 mb-1">Level</label>
                                 <input type="number" id="actualLevel" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400" value={actualLevel} onChange={(e) => setActualLevel(parseInt(e.target.value) || 0)} placeholder="e.g., 97" min="0" />
                             </div>
-                            <div className="min-w-0">
-                                <label htmlFor="preferredGear" className="block text-sm font-medium text-gray-300 mb-1">Preferred Gear</label>
-                                <input type="text" id="preferredGear" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400" value={preferredGear} onChange={(e) => setPreferredGear(e.target.value)} placeholder="e.g., Spirit Box" />
+
+                            {/* New Category Selection Dropdown */}
+                            <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-1"> {/* Adjusted span for better flow */}
+                                <label htmlFor="categorySelect" className="block text-sm font-medium text-gray-300 mb-1">Choose Detail Type</label>
+                                <select
+                                    id="categorySelect"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="equipment">Preferred Gear</option>
+                                    <option value="specialization">Specialization</option>
+                                    <option value="teamName">Team Name</option>
+                                </select>
                             </div>
-                            <div className="min-w-0">
-                                <label htmlFor="specialization" className="block text-sm font-medium text-gray-300 mb-1">Specialization</label>
-                                <input type="text" id="specialization" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400" value={specialization} onChange={(e) => setSpecialization(e.target.value)} placeholder="e.g., Evidence Collector" />
-                            </div>
-                            <div className="min-w-0">
-                                <label htmlFor="teamName" className="block text-sm font-medium text-gray-300 mb-1">Team Name</label>
-                                <input type="text" id="teamName" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400" value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="e.g., Ghost Hunters" />
-                            </div>
-                            <div className="min-w-0">
-                                <label htmlFor="idNumber" className="block text-sm font-medium text-gray-300 mb-1">ID Number</label>
-                                <input type="text" id="idNumber" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="e.g., PHASMO-007" />
-                            </div>
-                            <div className="col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-5 min-w-0">
+
+                            {/* Conditional Input Fields */}
+                            {selectedCategory === 'equipment' && (
+                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Preferred Gear (Max 3)</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 rounded-lg bg-gray-700 border border-gray-600">
+                                        {EQUIPMENT_LIST.map(item => (
+                                            <div key={item} className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`gear-${item}`}
+                                                    value={item}
+                                                    checked={selectedEquipment.includes(item)}
+                                                    onChange={handleEquipmentChange}
+                                                    className="form-checkbox h-4 w-4 text-red-600 transition duration-150 ease-in-out rounded-md border-gray-500 bg-gray-800"
+                                                />
+                                                <label htmlFor={`gear-${item}`} className="ml-2 text-sm text-gray-300">{item}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedCategory === 'specialization' && (
+                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                    <label htmlFor="specializationSelect" className="block text-sm font-medium text-gray-300 mb-1">Select Specialization</label>
+                                    <select
+                                        id="specializationSelect"
+                                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white"
+                                        value={selectedSpecialization}
+                                        onChange={(e) => setSelectedSpecialization(e.target.value)}
+                                    >
+                                        {SPECIALIZATION_LIST.map(item => (
+                                            <option key={item} value={item}>{item}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedCategory === 'teamName' && (
+                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                    <label htmlFor="teamNameInput" className="block text-sm font-medium text-gray-300 mb-1">Team Name</label>
+                                    <input
+                                        type="text"
+                                        id="teamNameInput"
+                                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                        value={teamNameInput}
+                                        onChange={(e) => setTeamNameInput(e.target.value)}
+                                        placeholder="e.g., Ghost Hunters"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Image Upload and Download Button remain */}
+                            <div className="col-span-full min-w-0">
                                 <label htmlFor="profileImageUpload" className="block text-sm font-medium text-gray-300 mb-1">Upload Profile Image</label>
                                 <input type="file" id="profileImageUpload" accept="image/*" className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer" onChange={handleImageUpload} />
                             </div>
-                            <div className="col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-5 min-w-0">
+                            <div className="col-span-full min-w-0">
                                 <button onClick={downloadIdCard} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
                                     Download ID Card
                                 </button>
@@ -197,64 +288,69 @@
                                 </h2>
                             </div>
 
-                            {/* Main Content Area */}
-                            <div className="absolute top-[70px] left-0 right-0 bottom-0 flex items-center justify-start p-8">
-                                {/* Left Section: Image, Name, Level */}
-                                <div className="flex items-center h-full">
-                                    {/* Profile Image Container */}
-                                    <div className="w-[250px] h-[350px] rounded-xl overflow-hidden border-4 border-gray-400 bg-gray-600 shadow-lg flex-shrink-0"
-                                        style={{
-                                            marginLeft: '20px',
-                                            marginTop: '20px',
-                                            borderRadius: '15px'
+                            {/* Main Content Area - Now using CSS Grid */}
+                            <div className="absolute top-[70px] left-0 right-0 bottom-0 grid grid-cols-[250px_1.1fr_180px] gap-4 p-8 items-start">
+                                {/* Column 1: Profile Image Container */}
+                                <div className="w-[250px] h-[350px] rounded-xl overflow-hidden border-4 border-gray-400 bg-gray-600 shadow-lg flex-shrink-0 self-start pt-5"
+                                    style={{ borderRadius: '15px' }}>
+                                    <img
+                                        src={profileImage}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'https://placehold.co/250x350/000000/FFFFFF?text=Image+Error';
                                         }}
-                                    >
-                                        <img
-                                            src={profileImage}
-                                            alt="Profile"
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = 'https://placehold.co/250x350/000000/FFFFFF?text=Image+Error';
-                                            }}
-                                        />
-                                    </div>
+                                    />
+                                </div>
 
-                                    {/* Name and Level Text */}
-                                    <div className="ml-10 mt-10"> {/* Adjusted margin for spacing */}
-                                        <p className="text-xl font-bold text-white uppercase mb-1">NAME</p>
-                                        <h3 className="text-6xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
-                                            {agentName}
-                                        </h3>
-                                        <p className="text-xl font-bold text-white uppercase mt-4 mb-1">LEVEL</p>
-                                        <h3 className="text-5xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
-                                            {`${toRoman(prestige)}-${actualLevel}`}
-                                        </h3>
+                                {/* Column 2: Name, Level, and Dynamic Text Fields */}
+                                <div className="flex flex-col justify-start items-start h-full pt-5 pl-4">
+                                    <p className="text-xl font-bold text-white uppercase mb-1">NAME</p>
+                                    <h3 className="text-6xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                        {agentName}
+                                    </h3>
+                                    <p className="text-xl font-bold text-white uppercase mt-4 mb-1">LEVEL</p>
+                                    <h3 className="text-5xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                        {`${toRoman(prestige)}-${actualLevel}`}
+                                    </h3>
+
+                                    {/* Dynamic section for Preferred Gear, Specialization, or Team Name */}
+                                    <div className="mt-8 text-sm space-y-2">
+                                        {selectedCategory === 'equipment' && (
+                                            <p><span className="font-bold text-gray-300">Preferred Gear:</span> {selectedEquipment.join(', ')}</p>
+                                        )}
+                                        {selectedCategory === 'specialization' && (
+                                            <p><span className="font-bold text-gray-300">Specialization:</span> {selectedSpecialization}</p>
+                                        )}
+                                        {selectedCategory === 'teamName' && (
+                                            <p><span className="font-bold text-gray-300">Team Name:</span> {teamNameInput}</p>
+                                        )}
                                     </div>
                                 </div>
 
-                                {/* Right Section: Badges - Horizontally aligned and positioned */}
-                                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-row items-center justify-center space-x-8">
+                                {/* Column 3: Badges */}
+                                <div className="flex flex-row items-center justify-end space-x-8 self-center">
                                     {/* Badge 1 (Microphone) */}
-                                    <div className="w-40 h-40 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl"
+                                    <div className="w-28 h-28 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl aspect-square"
                                         style={{
                                             background: 'linear-gradient(145deg, #FFD700, #DAA520)',
                                             boxShadow: '0px 0px 20px rgba(255,215,0,0.7)'
                                         }}
                                     >
-                                        <svg className="w-24 h-24 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <svg className="w-16 h-16 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.53-2.64 6.43-6 6.92V21h-2v-3.08c-3.36-.49-6-3.39-6-6.92H3c0 4.84 3.44 8.87 8 9.8V23h2v-2.18c4.56-.93 8-4.96 8-9.8h-2.7z"/>
                                         </svg>
                                     </div>
 
                                     {/* Badge 2 (Laurel Wreath) */}
-                                    <div className="w-40 h-40 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl"
+                                    <div className="w-28 h-28 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl aspect-square"
                                         style={{
                                             background: 'linear-gradient(145deg, #FFD700, #DAA520)',
                                             boxShadow: '0px 0px 20px rgba(255,215,0,0.7)'
                                         }}
                                     >
-                                        <svg className="w-24 h-24 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <svg className="w-16 h-16 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12 9c-.83 0-1.5-.67-1.5-1.5S11.17 6 12 6s1.5.67 1.5 1.5S12.83 9 12 9z"/>
                                             <path fillRule="evenodd" clipRule="evenodd" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm-4 13c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-4-8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
                                         </svg>
