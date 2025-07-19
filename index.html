@@ -146,8 +146,7 @@
             const [agentName, setAgentName] = useState('Player');
             const [rank, setRank] = useState('PARANORMAL INVESTIGATOR');
             const [prestige, setPrestige] = useState(1);
-            const [actualLevel, setActualLevel] = useState(01);
-
+            const [actualLevel, setActualLevel] = useState(0); // Changed default to 0
             // New states for the dynamic input fields
             const [selectedCategory, setSelectedCategory] = useState('equipment'); // 'equipment', 'specialization', 'teamName'
             const [selectedEquipment, setSelectedEquipment] = useState(['Spirit Box', 'EMF Reader', 'Flashlight']); // Max 3
@@ -646,7 +645,7 @@
                                     </h3>
                                     <p className="text-xl font-bold uppercase mt-4 mb-1" style={{ color: labelColor }}>LEVEL</p>
                                     <h3 className="text-5xl font-extrabold uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)', color: accentColor }}>
-                                        {`${toRoman(prestige)}-${actualLevel}`}
+                                        {`${toRoman(prestige)}-${actualLevel.toString().padStart(2, '0')}`}
                                     </h3>
 
                                     {/* Dynamic section for Preferred Gear, Specialization, or Team Name */}
