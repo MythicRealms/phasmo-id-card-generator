@@ -163,7 +163,7 @@
             };
 
             return (
-                <div className="min-h-screen bg-gray-900 text-gray-100 p-4 flex flex-col items-center justify-start gap-8 w-full">
+                <div className="min-h-screen bg-gray-900 text-gray-100 p-4 flex flex-col items-center justify-center gap-8 w-full">
                     {/* Input Form Section - Horizontal Bar at the Top */}
                     <div className="w-full bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
                         <h1 className="text-3xl font-bold text-red-500 mb-6 text-center">Create Your Phasmo ID</h1>
@@ -187,7 +187,7 @@
                             </div>
 
                             {/* New Category Selection Dropdown */}
-                            <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-1"> {/* Adjusted span for better flow */}
+                            <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-1">
                                 <label htmlFor="categorySelect" className="block text-sm font-medium text-gray-300 mb-1">Choose Detail Type</label>
                                 <select
                                     id="categorySelect"
@@ -201,11 +201,11 @@
                                 </select>
                             </div>
 
-                            {/* Conditional Input Fields */}
+                            {/* Conditional Input Fields - Reverted centering changes */}
                             {selectedCategory === 'equipment' && (
-                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                <div className="min-w-0 col-span-full">
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Select Preferred Gear (Max 3)</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 rounded-lg bg-gray-700 border border-gray-600">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 rounded-lg bg-gray-700 border border-gray-600 w-full">
                                         {EQUIPMENT_LIST.map(item => (
                                             <div key={item} className="flex items-center">
                                                 <input
@@ -224,7 +224,7 @@
                             )}
 
                             {selectedCategory === 'specialization' && (
-                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                <div className="min-w-0 col-span-full">
                                     <label htmlFor="specializationSelect" className="block text-sm font-medium text-gray-300 mb-1">Select Specialization</label>
                                     <select
                                         id="specializationSelect"
@@ -240,7 +240,7 @@
                             )}
 
                             {selectedCategory === 'teamName' && (
-                                <div className="min-w-0 col-span-full sm:col-span-2 md:col-span-3 lg:col-span-4"> {/* Adjusted span */}
+                                <div className="min-w-0 col-span-full">
                                     <label htmlFor="teamNameInput" className="block text-sm font-medium text-gray-300 mb-1">Team Name</label>
                                     <input
                                         type="text"
@@ -288,11 +288,11 @@
                                 </h2>
                             </div>
 
-                            {/* Main Content Area - Now using CSS Grid */}
-                            <div className="absolute top-[70px] left-0 right-0 bottom-0 grid grid-cols-[250px_1.1fr_180px] gap-4 p-8 items-start">
-                                {/* Column 1: Profile Image Container */}
-                                <div className="w-[250px] h-[350px] rounded-xl overflow-hidden border-4 border-gray-400 bg-gray-600 shadow-lg flex-shrink-0 self-start pt-5"
-                                    style={{ borderRadius: '15px' }}>
+                            {/* Main Content Area - Now using absolute positioning for sub-sections */}
+                            <div className="absolute top-[70px] left-0 right-0 bottom-0">
+                                {/* Profile Image Container */}
+                                <div className="absolute w-[250px] h-[350px] rounded-xl overflow-hidden border-4 border-gray-400 bg-gray-600 shadow-lg flex-shrink-0"
+                                    style={{ left: '20px', top: '20px', borderRadius: '15px' }}>
                                     <img
                                         src={profileImage}
                                         alt="Profile"
@@ -304,8 +304,8 @@
                                     />
                                 </div>
 
-                                {/* Column 2: Name, Level, and Dynamic Text Fields */}
-                                <div className="flex flex-col justify-start items-start h-full pt-5 pl-4">
+                                {/* Name, Level, and Dynamic Text Fields */}
+                                <div className="absolute flex flex-col justify-start items-start h-full pt-5 pl-4" style={{ left: '300px', top: '20px' }}>
                                     <p className="text-xl font-bold text-white uppercase mb-1">NAME</p>
                                     <h3 className="text-6xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
                                         {agentName}
@@ -316,21 +316,36 @@
                                     </h3>
 
                                     {/* Dynamic section for Preferred Gear, Specialization, or Team Name */}
-                                    <div className="mt-8 text-sm space-y-2">
+                                    <div className="mt-8 space-y-4"> {/* Increased space-y for better vertical separation */}
                                         {selectedCategory === 'equipment' && (
-                                            <p><span className="font-bold text-gray-300">Preferred Gear:</span> {selectedEquipment.join(', ')}</p>
+                                            <p className="flex flex-col items-start"> {/* Use flex-col to stack label and content */}
+                                                <span className="text-xl font-bold text-white uppercase mr-2">Preferred Gear:</span>
+                                                <span className="text-2xl font-extrabold text-red-500 uppercase tracking-wide leading-tight overflow-x-auto whitespace-nowrap max-w-full" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                                    {selectedEquipment.join(', ')}
+                                                </span>
+                                            </p>
                                         )}
                                         {selectedCategory === 'specialization' && (
-                                            <p><span className="font-bold text-gray-300">Specialization:</span> {selectedSpecialization}</p>
+                                            <p className="flex flex-col items-start"> {/* Use flex-col to stack label and content */}
+                                                <span className="text-xl font-bold text-white uppercase mr-2">Specialization:</span>
+                                                <span className="text-2xl font-extrabold text-red-500 uppercase tracking-wide leading-tight overflow-x-auto whitespace-nowrap max-w-full" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                                    {selectedSpecialization}
+                                                </span>
+                                            </p>
                                         )}
                                         {selectedCategory === 'teamName' && (
-                                            <p><span className="font-bold text-gray-300">Team Name:</span> {teamNameInput}</p>
+                                            <p className="flex flex-col items-start"> {/* Use flex-col to stack label and content */}
+                                                <span className="text-xl font-bold text-white uppercase mr-2">Team Name:</span>
+                                                <span className="text-2xl font-extrabold text-red-500 uppercase tracking-wide leading-tight overflow-x-auto whitespace-nowrap max-w-full" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                                    {teamNameInput}
+                                                </span>
+                                            </p>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Column 3: Badges */}
-                                <div className="flex flex-row items-center justify-end space-x-8 self-center">
+                                {/* Badges */}
+                                <div className="absolute flex flex-row items-center justify-start space-x-8" style={{ right: '80px', top: '150px' }}>
                                     {/* Badge 1 (Microphone) */}
                                     <div className="w-28 h-28 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl aspect-square"
                                         style={{
