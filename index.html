@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phasmo ID Card Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- React and ReactDOM CDNs - CORRECTED ORDER: React must be loaded before ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX transformation in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- html2canvas CDN for image download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Ensure the body and root div take full height and prevent default margins */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Hide scrollbars on the main page, content will scroll if needed within the app itself */
+        }
+        #root {
+            height: 100%;
+            display: flex; /* Use flexbox for root to center content */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            overflow: auto; /* Allow #root to scroll if content is larger than viewport */
+        }
+        /* Custom scrollbar for better aesthetics */
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+        body::-webkit-scrollbar-track {
+            background: #2d3748; /* bg-gray-800 */
+        }
+        body::-webkit-scrollbar-thumb {
+            background-color: #e53e3e; /* bg-red-600 */
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Import React hooks from the global React object
+        const { useState, useRef, useEffect } = React;
+
+        // Function to convert a number to a Roman numeral
+        const toRoman = (num) => {
+            if (typeof num !== 'number' || !Number.isInteger(num) || num < 1 || num > 3999) {
+                return String(num); // Return as string if invalid or not an integer
+            }
+
+            const romanMap = [
+                { value: 1000, numeral: 'M' },
+                { value: 900, numeral: 'CM' },
+                { value: 500, numeral: 'D' },
+                { value: 400, numeral: 'CD' },
+                { value: 100, numeral: 'C' },
+                { value: 90, numeral: 'XC' },
+                { value: 50, numeral: 'L' },
+                { value: 40, numeral: 'XL' },
+                { value: 10, numeral: 'X' },
+                { value: 9, numeral: 'IX' },
+                { value: 5, numeral: 'V' },
+                { value: 4, numeral: 'IV' },
+                { value: 1, numeral: 'I' },
+            ];
+
+            let result = '';
+            for (const { value, numeral } of romanMap) {
+                while (num >= value) {
+                    result += numeral;
+                    num -= value;
+                }
+            }
+            return result;
+        };
+
+        const App = () => {
+            // State variables for ID card details
+            const [agentName, setAgentName] = useState('HAMMOND'); // Default to Hammond as per image
+            const [rank, setRank] = useState('PARANORMAL INVESTIGATOR'); // This will be the main title
+            const [prestige, setPrestige] = useState(1); // New state for prestige (number)
+            const [actualLevel, setActualLevel] = useState(97); // New state for actual level (number)
+            const [preferredGear, setPreferredGear] = useState('Spirit Box, EMF Reader, Flashlight');
+            const [specialization, setSpecialization] = useState('Ghost Type Identification');
+            const [profileImage, setProfileImage] = useState('http://googleusercontent.com/file_content/1'); // Use the uploaded image as default
+            const [teamName, setTeamName] = useState('Ghost Hunters Inc.');
+            const [idNumber, setIdNumber] = useState('PHASMO-001');
+
+            // Ref for the ID card element to capture it for download
+            const idCardRef = useRef(null);
+
+            // Function to handle image upload
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setProfileImage(reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // Function to download the ID card as an image
+            const downloadIdCard = () => {
+                if (idCardRef.current) {
+                    // html2canvas is already loaded via CDN, so no need for useEffect for it
+                    if (window.html2canvas) {
+                        window.html2canvas(idCardRef.current, {
+                            scale: 2, // Increase scale for better resolution
+                            useCORS: true, // Important for handling external images if any
+                            logging: true, // Enable logging for debugging
+                        }).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = 'phasmo-id-card.png';
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                        }).catch(error => {
+                            console.error("Error generating ID card image:", error);
+                            // Provide user feedback if download fails
+                            alert("Failed to generate ID card image. Please try again.");
+                        });
+                    } else {
+                        console.error("html2canvas is not loaded. Cannot download ID card.");
+                        alert("Image download feature is not ready. Please try again in a moment.");
+                    }
+                }
+            };
+
+            // No need for useEffect to load html2canvas, as it's in the head.
+            // Remove the useEffect block for html2canvas loading.
+
+            return (
+                // Main container: now flex-col to stack input and card vertically
+                // items-center to center content horizontally
+                // justify-start to push content to the top
+                <div className="h-full bg-gray-900 text-gray-100 p-8 font-inter flex flex-col items-center justify-start gap-8">
+                    {/* Input Form Section - now full width for the "horizontal bar" look */}
+                    <div className="w-full bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
+                        <h1 className="text-3xl font-bold text-red-500 mb-6 text-center">Create Your Phasmo ID</h1>
+
+                        {/* Flex container for form fields to make them flow horizontally */}
+                        {/* Added min-w-0 to each input div for better responsiveness */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {/* Agent Name */}
+                            <div className="min-w-0">
+                                <label htmlFor="agentName" className="block text-sm font-medium text-gray-300 mb-1">Agent Name</label>
+                                <input
+                                    type="text"
+                                    id="agentName"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={agentName}
+                                    onChange={(e) => setAgentName(e.target.value)}
+                                    placeholder="e.g., John Doe"
+                                />
+                            </div>
+
+                            {/* Rank (now main title) */}
+                            <div className="min-w-0">
+                                <label htmlFor="rank" className="block text-sm font-medium text-gray-300 mb-1">Main Title (e.g., Paranormal Investigator)</label>
+                                <input
+                                    type="text"
+                                    id="rank"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={rank}
+                                    onChange={(e) => setRank(e.target.value)}
+                                    placeholder="e.g., Rookie Investigator"
+                                />
+                            </div>
+
+                            {/* Prestige Input */}
+                            <div className="min-w-0">
+                                <label htmlFor="prestige" className="block text-sm font-medium text-gray-300 mb-1">Prestige (Number)</label>
+                                <input
+                                    type="number"
+                                    id="prestige"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={prestige}
+                                    onChange={(e) => setPrestige(parseInt(e.target.value) || 0)} // Ensure it's a number
+                                    placeholder="e.g., 1"
+                                    min="0"
+                                />
+                            </div>
+
+                            {/* Actual Level Input */}
+                            <div className="min-w-0">
+                                <label htmlFor="actualLevel" className="block text-sm font-medium text-gray-300 mb-1">Level (Number)</label>
+                                <input
+                                    type="number"
+                                    id="actualLevel"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={actualLevel}
+                                    onChange={(e) => setActualLevel(parseInt(e.target.value) || 0)} // Ensure it's a number
+                                    placeholder="e.g., 97"
+                                    min="0"
+                                />
+                            </div>
+
+                            {/* Preferred Gear */}
+                            <div className="min-w-0">
+                                <label htmlFor="preferredGear" className="block text-sm font-medium text-gray-300 mb-1">Preferred Gear</label>
+                                <input
+                                    type="text"
+                                    id="preferredGear"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={preferredGear}
+                                    onChange={(e) => setPreferredGear(e.target.value)}
+                                    placeholder="e.g., Camera, Salt, Lighter"
+                                />
+                            </div>
+
+                            {/* Specialization */}
+                            <div className="min-w-0">
+                                <label htmlFor="specialization" className="block text-sm font-medium text-gray-300 mb-1">Specialization</label>
+                                <input
+                                    type="text"
+                                    id="specialization"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={specialization}
+                                    onChange={(e) => setSpecialization(e.target.value)}
+                                    placeholder="e.g., Evidence Collector"
+                                />
+                            </div>
+
+                            {/* Team Name */}
+                            <div className="min-w-0">
+                                <label htmlFor="teamName" className="block text-sm font-medium text-gray-300 mb-1">Team Name</label>
+                                <input
+                                    type="text"
+                                    id="teamName"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={teamName}
+                                    onChange={(e) => setTeamName(e.target.value)}
+                                    placeholder="e.g., Paranormal Pioneers"
+                                />
+                            </div>
+
+                            {/* ID Number */}
+                            <div className="min-w-0">
+                                <label htmlFor="idNumber" className="block text-sm font-medium text-gray-300 mb-1">ID Number</label>
+                                <input
+                                    type="text"
+                                    id="idNumber"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 text-white placeholder-gray-400"
+                                    value={idNumber}
+                                    onChange={(e) => setIdNumber(e.target.value)}
+                                    placeholder="e.g., PHASMO-007"
+                                />
+                            </div>
+
+                            {/* Image Upload */}
+                            <div className="col-span-full min-w-0"> {/* Make image upload span full width if needed for layout */}
+                                <label htmlFor="profileImageUpload" className="block text-sm font-medium text-gray-300 mb-1">Upload Profile Image</label>
+                                <input
+                                    type="file"
+                                    id="profileImageUpload"
+                                    accept="image/*"
+                                    className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
+                                    onChange={handleImageUpload}
+                                />
+                            </div>
+
+                            {/* Download Button */}
+                            <div className="col-span-full min-w-0"> {/* Make button span full width */}
+                                <button
+                                    onClick={downloadIdCard}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+                                >
+                                    Download ID Card
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ID Card Display Section - now automatically centered below the form */}
+                    <div className="flex-shrink-0 mt-8 mx-auto"> {/* Added mt-8 for spacing and mx-auto for centering */}
+                        <div
+                            ref={idCardRef}
+                            className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-xl shadow-2xl overflow-hidden border-2 border-red-500"
+                            style={{
+                                width: 'min(100%, 1000px)', // Take 100% of parent width, but no more than 1000px
+                                minWidth: '500px', // Ensure a minimum width of 500px
+                                aspectRatio: '1000 / 553', // Maintain aspect ratio
+                                maxWidth: '100%', // Ensure it scales down on smaller screens
+                                maxHeight: 'calc(100vh - 64px)', // Adjusted for padding/margins, give some buffer
+                                backgroundImage: 'url("https://placehold.co/1000x553/000000/FFFFFF?text=Abstract+Background")', // Placeholder for abstract background
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                // Adding a subtle overlay to mimic the image's texture
+                                boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            {/* Top Header: PARANORMAL INVESTIGATOR */}
+                            <div className="absolute top-0 left-0 right-0 bg-red-700 text-white text-center py-4 px-6 rounded-t-xl" style={{ height: '70px' }}>
+                                <h2 className="text-4xl font-extrabold uppercase tracking-widest leading-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+                                    {rank}
+                                </h2>
+                            </div>
+
+                            {/* Main Content Area */}
+                            <div className="absolute top-[70px] left-0 right-0 bottom-0 flex items-center justify-start p-8">
+                                {/* Left Section: Image, Name, Level */}
+                                <div className="relative flex items-center h-full">
+                                    {/* Profile Image Container */}
+                                    <div className="w-[250px] h-[350px] rounded-xl overflow-hidden border-4 border-gray-400 bg-gray-600 shadow-lg flex-shrink-0"
+                                        style={{
+                                            marginLeft: '20px', // Adjust position as per image
+                                            marginTop: '20px', // Adjust position as per image
+                                            borderRadius: '15px' // More rectangular with rounded corners
+                                        }}
+                                    >
+                                        <img
+                                            src={profileImage}
+                                            alt="Profile"
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                // Fallback if image fails to load
+                                                e.target.onerror = null;
+                                                e.target.src = 'https://placehold.co/250x350/000000/FFFFFF?text=Image+Error';
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Name and Level Text */}
+                                    <div className="absolute" style={{ left: '300px', top: '50px' }}> {/* Adjust positioning */}
+                                        <p className="text-xl font-bold text-white uppercase mb-1">NAME</p>
+                                        <h3 className="text-6xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                            {agentName}
+                                        </h3>
+                                        <p className="text-xl font-bold text-white uppercase mt-4 mb-1">LEVEL</p>
+                                        <h3 className="text-5xl font-extrabold text-red-500 uppercase tracking-wide leading-tight" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)' }}>
+                                            {`${toRoman(prestige)}-${actualLevel}`} {/* Display Roman numeral for prestige */}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                {/* Right Section: Badges - Now horizontally aligned */}
+                                <div className="absolute flex flex-row items-center justify-center space-x-8" style={{ right: '80px', top: '150px' }}> {/* Adjusted positioning and flex direction */}
+                                    {/* Badge 1 (Microphone) */}
+                                    <div className="w-40 h-40 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl"
+                                        style={{
+                                            background: 'linear-gradient(145deg, #FFD700, #DAA520)', // Gold gradient
+                                            boxShadow: '0px 0px 20px rgba(255,215,0,0.7)' // Gold glow
+                                        }}
+                                    >
+                                        {/* Microphone SVG Icon */}
+                                        <svg className="w-24 h-24 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.53-2.64 6.43-6 6.92V21h-2v-3.08c-3.36-.49-6-3.39-6-6.92H3c0 4.84 3.44 8.87 8 9.8V23h2v-2.18c4.56-.93 8-4.96 8-9.8h-2.7z"/>
+                                        </svg>
+                                    </div>
+
+                                    {/* Badge 2 (Laurel Wreath) */}
+                                    <div className="w-40 h-40 rounded-full bg-yellow-500 border-4 border-yellow-300 flex items-center justify-center shadow-xl"
+                                        style={{
+                                            background: 'linear-gradient(145deg, #FFD700, #DAA520)', // Gold gradient
+                                            boxShadow: '0px 0px 20px rgba(255,215,0,0.7)' // Gold glow
+                                        }}
+                                    >
+                                        {/* Laurel Wreath SVG Icon (simplified) */}
+                                        <svg className="w-24 h-24 text-gray-800" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12 9c-.83 0-1.5-.67-1.5-1.5S11.17 6 12 6s1.5.67 1.5 1.5S12.83 9 12 9z"/>
+                                            <path fillRule="evenodd" clipRule="evenodd" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm-4 13c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-4-8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the App component into the root div
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
