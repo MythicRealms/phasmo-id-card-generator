@@ -80,6 +80,54 @@
             return result;
         };
 
+        // Helper function to resize images (PNG/JPEG)
+        const resizeImage = (file, maxWidth, maxHeight, quality) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions to fit within maxWidth/maxHeight
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = Math.round(height * (maxWidth / width));
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = Math.round(width * (maxHeight / height));
+                                height = maxHeight;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert canvas to data URL with specified quality for JPEG
+                        // PNG does not use quality parameter, but it's harmless
+                        resolve(canvas.toDataURL(file.type, quality));
+                    };
+                    img.onerror = () => {
+                        console.error("Error loading image for resizing.");
+                        resolve(event.target.result); // Resolve with original if error
+                    };
+                };
+                reader.onerror = () => {
+                    console.error("Error reading file for resizing.");
+                    resolve(null); // Resolve with null if error
+                };
+            });
+        };
+
+
         const App = () => {
             // Default placeholder image for the profile
             const DEFAULT_PROFILE_IMAGE = 'https://placehold.co/250x350/000000/FFFFFF?text=Upload+Image';
@@ -109,9 +157,9 @@
             const [profileImage, setProfileImage] = useState(DEFAULT_PROFILE_IMAGE); // Use the default placeholder
             const [backgroundStyle, setBackgroundStyle] = useState(DEFAULT_BACKGROUND_STYLE); // State for background style
 
-            // States for custom SVG badges
-            const [customBadge1Svg, setCustomBadge1Svg] = useState(null);
-            const [customBadge2Svg, setCustomBadge2Svg] = useState(null);
+            // States for custom badge data URLs (can be SVG data URL or raster image data URL)
+            const [customBadge1DataUrl, setCustomBadge1DataUrl] = useState(null);
+            const [customBadge2DataUrl, setCustomBadge2DataUrl] = useState(null);
 
             // New state variables for custom colors
             const [accentColor, setAccentColor] = useState('#EF4444'); // Default Tailwind red-500
@@ -139,14 +187,21 @@
                 'Thermals Expert', 'Cursed Objects Finder', 'Team Leader', 'Support'
             ];
 
-            const handleImageUpload = (event) => {
+            const handleImageUpload = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setProfileImage(reader.result);
-                    };
-                    reader.readAsDataURL(file);
+                    if (file.type.startsWith('image/')) {
+                        const resizedDataUrl = await resizeImage(file, 350, 350, 0.8); // Max 350px for profile
+                        if (resizedDataUrl) {
+                            setProfileImage(resizedDataUrl);
+                        } else {
+                            alert("Failed to process image. Please try another file.");
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                        }
+                    } else {
+                        alert("Please upload a valid image file (PNG, JPEG, GIF, etc.) for Profile Image.");
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                    }
                 }
             };
 
@@ -159,21 +214,28 @@
             };
 
             // Handle background image upload
-            const handleBackgroundUpload = (event) => {
+            const handleBackgroundUpload = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setBackgroundStyle({
-                            backgroundImage: `url(${reader.result})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                            backgroundColor: 'transparent',
-                            boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)'
-                        });
-                    };
-                    reader.readAsDataURL(file);
+                    if (file.type.startsWith('image/')) {
+                        const resizedDataUrl = await resizeImage(file, 1000, 553, 0.7); // Max 1000x553 for background
+                        if (resizedDataUrl) {
+                            setBackgroundStyle({
+                                backgroundImage: `url(${resizedDataUrl})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundRepeat: 'no-repeat',
+                                backgroundColor: 'transparent',
+                                boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)'
+                            });
+                        } else {
+                            alert("Failed to process background image. Please try another file.");
+                            if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = '';
+                        }
+                    } else {
+                        alert("Please upload a valid image file (PNG, JPEG, GIF, etc.) for Background.");
+                        if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = '';
+                    }
                 }
             };
 
@@ -193,7 +255,7 @@
             };
 
             // Function to process and set custom SVG, adjusting fill for consistency
-            const processAndSetSvg = (svgString, setSvgState) => {
+            const processSvgForBadge = (svgString) => {
                 // Remove XML declaration, DOCTYPE, and metadata for cleaner embedding
                 let cleanedSvg = svgString
                     .replace(/<\?xml[^>]*\?>/g, '')
@@ -211,49 +273,70 @@
                     cleanedSvg = cleanedSvg.replace(/fill="[^"]*"/g, 'fill="currentColor"');
                     return `<svg${newAttrs}>`;
                 });
-
-                setSvgState(cleanedSvg);
+                return cleanedSvg;
             };
 
             // Handle custom badge 1 upload
-            const handleBadge1Upload = (event) => {
+            const handleBadge1Upload = async (event) => {
                 const file = event.target.files[0];
-                if (file && file.type === 'image/svg+xml') {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        processAndSetSvg(reader.result, setCustomBadge1Svg);
-                    };
-                    reader.readAsText(file);
-                } else {
-                    alert('Please upload a valid SVG file for Badge 1.');
-                    if (event.target) event.target.value = ''; // Clear file input
+                if (file) {
+                    if (file.type === 'image/svg+xml') {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const processedSvg = processSvgForBadge(reader.result);
+                            setCustomBadge1DataUrl(processedSvg);
+                        };
+                        reader.readAsText(file);
+                    } else if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
+                        const resizedDataUrl = await resizeImage(file, 100, 100, 0.9); // Max 100px for badges
+                        if (resizedDataUrl) {
+                            setCustomBadge1DataUrl(resizedDataUrl);
+                        } else {
+                            alert("Failed to process image for Badge 1. Please try another file.");
+                            if (badge1FileInputRef.current) badge1FileInputRef.current.value = '';
+                        }
+                    } else {
+                        alert('Please upload a valid SVG, PNG, or JPEG file for Badge 1.');
+                        if (event.target) event.target.value = ''; // Clear file input
+                    }
                 }
             };
 
             // Handle custom badge 2 upload
-            const handleBadge2Upload = (event) => {
+            const handleBadge2Upload = async (event) => {
                 const file = event.target.files[0];
-                if (file && file.type === 'image/svg+xml') {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        processAndSetSvg(reader.result, setCustomBadge2Svg);
-                    };
-                    reader.readAsText(file);
-                } else {
-                    alert('Please upload a valid SVG file for Badge 2.');
-                    if (event.target) event.target.value = ''; // Clear file input
+                if (file) {
+                    if (file.type === 'image/svg+xml') {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const processedSvg = processSvgForBadge(reader.result);
+                            setCustomBadge2DataUrl(processedSvg);
+                        };
+                        reader.readAsText(file);
+                    } else if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
+                        const resizedDataUrl = await resizeImage(file, 100, 100, 0.9); // Max 100px for badges
+                        if (resizedDataUrl) {
+                            setCustomBadge2DataUrl(resizedDataUrl);
+                        } else {
+                            alert("Failed to process image for Badge 2. Please try another file.");
+                            if (badge2FileInputRef.current) badge2FileInputRef.current.value = '';
+                        }
+                    } else {
+                        alert('Please upload a valid SVG, PNG, or JPEG file for Badge 2.');
+                        if (event.target) event.target.value = ''; // Clear file input
+                    }
                 }
             };
 
             // Function to clear custom badge 1
             const clearBadge1 = () => {
-                setCustomBadge1Svg(null);
+                setCustomBadge1DataUrl(null);
                 if (badge1FileInputRef.current) badge1FileInputRef.current.value = '';
             };
 
             // Function to clear custom badge 2
             const clearBadge2 = () => {
-                setCustomBadge2Svg(null);
+                setCustomBadge2DataUrl(null);
                 if (badge2FileInputRef.current) badge2FileInputRef.current.value = '';
             };
 
@@ -304,7 +387,7 @@
                 <div className="min-h-screen bg-gray-900 text-gray-100 p-4 flex flex-col items-center justify-center gap-8 w-full">
                     {/* Input Form Section - Horizontal Bar at the Top */}
                     <div className="w-full bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
-                        <h1 className="text-3xl font-bold text-red-500 mb-6 text-center">Create Your Phasmo ID</h1>
+                        <h1 className="text-3xl font-bold" style={{ color: accentColor }}>Create Your Phasmo ID</h1>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             <div className="min-w-0">
@@ -395,7 +478,7 @@
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Image Upload and Clear Button for Profile Photo */}
                                 <div className="min-w-0">
-                                    <label htmlFor="profileImageUpload" className="block text-sm font-medium text-gray-300 mb-1">Upload Profile Image</label>
+                                    <label htmlFor="profileImageUpload" className="block text-sm font-medium text-gray-300 mb-1">Upload Profile Image (PNG, JPEG, GIF)</label>
                                     <div className="flex items-center space-x-2">
                                         <button
                                             onClick={clearProfileImage}
@@ -406,7 +489,7 @@
                                         <input
                                             type="file"
                                             id="profileImageUpload"
-                                            accept="image/*"
+                                            accept="image/png, image/jpeg, image/gif"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleImageUpload}
                                             ref={fileInputRef} // Attach ref here
@@ -416,7 +499,7 @@
 
                                 {/* Image Upload and Clear Button for Background */}
                                 <div className="min-w-0">
-                                    <label htmlFor="backgroundUpload" className="block text-sm font-medium text-gray-300 mb-1">Choose Background</label>
+                                    <label htmlFor="backgroundUpload" className="block text-sm font-medium text-gray-300 mb-1">Choose Background (PNG, JPEG, GIF)</label>
                                     <div className="flex items-center space-x-2">
                                         <button
                                             onClick={clearBackground}
@@ -427,7 +510,7 @@
                                         <input
                                             type="file"
                                             id="backgroundUpload"
-                                            accept="image/*"
+                                            accept="image/png, image/jpeg, image/gif"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleBackgroundUpload}
                                             ref={backgroundFileInputRef} // Attach ref here
@@ -439,9 +522,9 @@
                             {/* Custom Badge 1 Upload */}
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="min-w-0">
-                                    <label htmlFor="badge1Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 1 (SVG only)</label>
+                                    <label htmlFor="badge1Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 1 (SVG, PNG, JPEG)</label>
                                     <p className="text-xs text-gray-400 mb-2">
-                                        Need to convert an image to SVG? Try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
+                                        For SVG conversion, try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
                                     </p>
                                     <div className="flex items-center space-x-2">
                                         <button
@@ -453,7 +536,7 @@
                                         <input
                                             type="file"
                                             id="badge1Upload"
-                                            accept="image/svg+xml"
+                                            accept="image/svg+xml, image/png, image/jpeg"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleBadge1Upload}
                                             ref={badge1FileInputRef}
@@ -463,9 +546,9 @@
 
                                 {/* Custom Badge 2 Upload */}
                                 <div className="min-w-0">
-                                    <label htmlFor="badge2Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 2 (SVG only)</label>
+                                    <label htmlFor="badge2Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 2 (SVG, PNG, JPEG)</label>
                                     <p className="text-xs text-gray-400 mb-2">
-                                        Need to convert an image to SVG? Try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
+                                        For SVG conversion, try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
                                     </p>
                                     <div className="flex items-center space-x-2">
                                         <button
@@ -477,7 +560,7 @@
                                         <input
                                             type="file"
                                             id="badge2Upload"
-                                            accept="image/svg+xml"
+                                            accept="image/svg+xml, image/png, image/jpeg"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleBadge2Upload}
                                             ref={badge2FileInputRef}
@@ -512,7 +595,7 @@
 
 
                             <div className="col-span-full min-w-0">
-                                <button onClick={downloadIdCard} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                                <button onClick={downloadIdCard} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105" style={{ backgroundColor: accentColor }}>
                                     Download ID Card
                                 </button>
                             </div>
@@ -598,9 +681,13 @@
                                 {/* Badges */}
                                 <div className="absolute flex flex-row items-center justify-start space-x-8" style={{ right: '80px', top: '150px' }}>
                                     {/* Badge 1 */}
-                                    <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-xl aspect-square">
-                                        {customBadge1Svg ? (
-                                            <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge1Svg }} />
+                                    <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-xl aspect-square overflow-hidden">
+                                        {customBadge1DataUrl ? (
+                                            customBadge1DataUrl.startsWith('data:image/svg+xml') ? (
+                                                <div className="w-full h-full text-white p-4" dangerouslySetInnerHTML={{ __html: customBadge1DataUrl }} />
+                                            ) : (
+                                                <img src={customBadge1DataUrl} alt="Custom Badge 1" className="w-full h-full object-cover p-2" />
+                                            )
                                         ) : (
                                             // Default Candle SVG Icon
                                             <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
@@ -633,9 +720,13 @@
                                     </div>
 
                                     {/* Badge 2 */}
-                                    <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-xl aspect-square">
-                                        {customBadge2Svg ? (
-                                            <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge2Svg }} />
+                                    <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-xl aspect-square overflow-hidden">
+                                        {customBadge2DataUrl ? (
+                                            customBadge2DataUrl.startsWith('data:image/svg+xml') ? (
+                                                <div className="w-full h-full text-white p-4" dangerouslySetInnerHTML={{ __html: customBadge2DataUrl }} />
+                                            ) : (
+                                                <img src={customBadge2DataUrl} alt="Custom Badge 2" className="w-full h-full object-cover p-2" />
+                                            )
                                         ) : (
                                             // Default Crucifix SVG Icon
                                             <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
