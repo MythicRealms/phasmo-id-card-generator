@@ -153,13 +153,15 @@
             const [selectedEquipment, setSelectedEquipment] = useState(['Spirit Box', 'EMF Reader', 'Flashlight']); // Max 3
             const [selectedSpecialization, setSelectedSpecialization] = useState('Ghost Type Identification');
             const [teamNameInput, setTeamNameInput] = useState('Ghost Hunters Inc.');
+            const [headgear, setHeadgear] = useState(''); // State for optional Headgear (now controlled by radio buttons)
 
             const [profileImage, setProfileImage] = useState(DEFAULT_PROFILE_IMAGE); // Use the default placeholder
             const [backgroundStyle, setBackgroundStyle] = useState(DEFAULT_BACKGROUND_STYLE); // State for background style
 
-            // States for custom badge data URLs (can be SVG data URL or raster image data URL)
-            const [customBadge1DataUrl, setCustomBadge1DataUrl] = useState(null);
-            const [customBadge2DataUrl, setCustomBadge2DataUrl] = useState(null);
+            // States for custom badge data URLs (can be raster image data URL)
+            // NEW: Default PNG images for badges
+            const [customBadge1DataUrl, setCustomBadge1DataUrl] = useState('https://i.ibb.co/KkZ9Nv3/1.png');
+            const [customBadge2DataUrl, setCustomBadge2DataUrl] = useState('https://i.ibb.co/C3zZMv0s/2.png');
 
             // New state variables for custom colors
             const [accentColor, setAccentColor] = useState('#EF4444'); // Default Tailwind red-500
@@ -175,10 +177,11 @@
             // Data lists for dropdowns and checkboxes
             const EQUIPMENT_LIST = [
                 'Spirit Box', 'EMF Reader', 'Flashlight', 'UV Light', 'Video Camera',
-                'Photo Camera', 'Tripod', 'Ghost Writing Book', 'Salt', 'Smudge Sticks',
-                'Lighter', 'Candle', 'Crucifix', 'Motion Sensor', 'Sound Sensor',
-                'Thermomenter', 'Head Mounted Camera', 'Sanity Pills', 'DOTS Projector',
-                'Igniter'
+                'Photo Camera', 'Tripod', 'Ghost Writing Book', 'Salt', 'Incense',
+                'Firelight',
+                'Motion Sensor', 'Sound Sensor', 'Thermometer',
+                'Sanity Pills', 'DOTS Projector',
+                'Parabolic Microphone', 'Sound Recorder'
             ];
 
             const SPECIALIZATION_LIST = [
@@ -186,6 +189,8 @@
                 'Paranormal Photography', 'Spirit Box Expert', 'EMF Specialist',
                 'Thermals Expert', 'Cursed Objects Finder', 'Team Leader', 'Support'
             ];
+
+            const HEADGEAR_OPTIONS = ['Camera', 'Flashlight', 'Nightvision']; // Headgear options
 
             const handleImageUpload = async (event) => {
                 const file = event.target.files[0];
@@ -247,40 +252,13 @@
                 }
             };
 
-            // Function to process and set custom SVG, adjusting fill for consistency
-            const processSvgForBadge = (svgString) => {
-                // Remove XML declaration, DOCTYPE, and metadata for cleaner embedding
-                let cleanedSvg = svgString
-                    .replace(/<\?xml[^>]*\?>/g, '')
-                    .replace(/<!DOCTYPE[^>]*>/g, '')
-                    .replace(/<metadata>[\s\S]*?<\/metadata>/g, '');
+            // Removed processSvgForBadge function as SVG support is removed
 
-                // Ensure the main <svg> tag has appropriate sizing and and aspect ratio
-                // Also, attempt to change fill to "currentColor" so it respects parent text color
-                cleanedSvg = cleanedSvg.replace(/<svg([^>]*)>/, (match, p1) => {
-                    let newAttrs = p1;
-                    if (!p1.includes('width=')) newAttrs += ' width="100%"';
-                    if (!p1.includes('height=')) newAttrs += ' height="100%"';
-                    if (!p1.includes('preserveAspectRatio=')) newAttrs += ' preserveAspectRatio="xMidYMid meet"';
-                    // Replace specific fill colors (like #000000) with currentColor
-                    cleanedSvg = cleanedSvg.replace(/fill="[^"]*"/g, 'fill="currentColor"');
-                    return `<svg${newAttrs}>`;
-                });
-                return cleanedSvg;
-            };
-
-            // Handle custom badge 1 upload
+            // Handle custom badge 1 upload (now only PNG/JPEG)
             const handleBadge1Upload = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    if (file.type === 'image/svg+xml') {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const processedSvg = processSvgForBadge(reader.result);
-                            setCustomBadge1DataUrl(processedSvg);
-                        };
-                        reader.readAsText(file);
-                    } else if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
+                    if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
                         const resizedDataUrl = await resizeImage(file, 100, 100, 0.9); // Max 100px for badges
                         if (resizedDataUrl) {
                             setCustomBadge1DataUrl(resizedDataUrl);
@@ -289,24 +267,17 @@
                             if (badge1FileInputRef.current) badge1FileInputRef.current.value = '';
                         }
                     } else {
-                        alert('Please upload a valid SVG, PNG, or JPEG file for Badge 1.');
+                        alert('Please upload a valid PNG or JPEG file for Badge 1.');
                         if (event.target) event.target.value = ''; // Clear file input
                     }
                 }
             };
 
-            // Handle custom badge 2 upload
+            // Handle custom badge 2 upload (now only PNG/JPEG)
             const handleBadge2Upload = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    if (file.type === 'image/svg+xml') {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const processedSvg = processSvgForBadge(reader.result);
-                            setCustomBadge2DataUrl(processedSvg);
-                        };
-                        reader.readAsText(file);
-                    } else if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
+                    if (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg')) {
                         const resizedDataUrl = await resizeImage(file, 100, 100, 0.9); // Max 100px for badges
                         if (resizedDataUrl) {
                             setCustomBadge2DataUrl(resizedDataUrl);
@@ -315,7 +286,7 @@
                             if (badge2FileInputRef.current) badge2FileInputRef.current.value = '';
                         }
                     } else {
-                        alert('Please upload a valid SVG, PNG, or JPEG file for Badge 2.');
+                        alert('Please upload a valid PNG or JPEG file for Badge 2.');
                         if (event.target) event.target.value = ''; // Clear file input
                     }
                 }
@@ -323,7 +294,7 @@
 
             // Function to clear custom badge 1
             const clearBadge1 = () => {
-                setCustomBadge1DataUrl(null);
+                setCustomBadge1DataUrl('https://i.ibb.co/KkZ9Nv3/1.png'); // Revert to default
                 if (badge1FileInputRef.current) {
                     badge1FileInputRef.current.value = '';
                 }
@@ -331,7 +302,7 @@
 
             // Function to clear custom badge 2
             const clearBadge2 = () => {
-                setCustomBadge2DataUrl(null);
+                setCustomBadge2DataUrl('https://i.ibb.co/C3zZMv0s/2.png'); // Revert to default
                 if (badge2FileInputRef.current) {
                     badge2FileInputRef.current.value = '';
                 }
@@ -471,6 +442,41 @@
                                 </div>
                             )}
 
+                            {/* Headgear Radio Buttons */}
+                            <div className="min-w-0 col-span-full">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Optional Headgear</label>
+                                <div className="flex flex-wrap gap-4 p-2 rounded-lg bg-gray-700 border border-gray-600">
+                                    {HEADGEAR_OPTIONS.map(option => (
+                                        <div key={option} className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                id={`headgear-${option}`}
+                                                name="headgear"
+                                                value={option}
+                                                checked={headgear === option}
+                                                onChange={(e) => setHeadgear(e.target.value)}
+                                                className="form-radio h-4 w-4 text-red-600 transition duration-150 ease-in-out rounded-full border-gray-500 bg-gray-800"
+                                            />
+                                            <label htmlFor={`headgear-${option}`} className="ml-2 text-sm text-gray-300">{option}</label>
+                                        </div>
+                                    ))}
+                                    {/* Option to clear headgear selection */}
+                                    <div className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            id="headgear-none"
+                                            name="headgear"
+                                            value=""
+                                            checked={headgear === ''}
+                                            onChange={(e) => setHeadgear('')}
+                                            className="form-radio h-4 w-4 text-gray-400 transition duration-150 ease-in-out rounded-full border-gray-500 bg-gray-800"
+                                        />
+                                        <label htmlFor="headgear-none" className="ml-2 text-sm text-gray-300">None</label>
+                                    </div>
+                                </div>
+                            </div>
+
+
                             {/* Container for Profile Image and Background Image sections to be on the same row */}
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Image Upload and Clear Button for Profile Photo */}
@@ -520,10 +526,8 @@
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Custom Badge 1 Upload */}
                                 <div className="min-w-0">
-                                    <label htmlFor="badge1Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 1 (SVG, PNG, JPEG)</label>
-                                    <p className="text-xs text-gray-400 mb-2">
-                                        For SVG conversion, try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
-                                    </p>
+                                    <label htmlFor="badge1Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 1 (PNG, JPEG)</label>
+                                    {/* Removed SVG conversion link */}
                                     <div className="flex items-center space-x-2">
                                         <button
                                             onClick={clearBadge1}
@@ -534,7 +538,7 @@
                                         <input
                                             type="file"
                                             id="badge1Upload"
-                                            accept="image/svg+xml, image/png, image/jpeg"
+                                            accept="image/png, image/jpeg"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleBadge1Upload}
                                             ref={badge1FileInputRef}
@@ -544,10 +548,8 @@
 
                                 {/* Custom Badge 2 Upload */}
                                 <div className="min-w-0">
-                                    <label htmlFor="badge2Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 2 (SVG, PNG, JPEG)</label>
-                                    <p className="text-xs text-gray-400 mb-2">
-                                        For SVG conversion, try <a href="https://picsvg.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">picsvg.com</a>
-                                    </p>
+                                    <label htmlFor="badge2Upload" className="block text-sm font-medium text-gray-300 mb-1">Upload Badge 2 (PNG, JPEG)</label>
+                                    {/* Removed SVG conversion link */}
                                     <div className="flex items-center space-x-2">
                                         <button
                                             onClick={clearBadge2}
@@ -558,7 +560,7 @@
                                         <input
                                             type="file"
                                             id="badge2Upload"
-                                            accept="image/svg+xml, image/png, image/jpeg"
+                                            accept="image/png, image/jpeg"
                                             className="w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
                                             onChange={handleBadge2Upload}
                                             ref={badge2FileInputRef}
@@ -679,6 +681,15 @@
                                                 </span>
                                             </p>
                                         )}
+                                        {/* Optional Headgear Display */}
+                                        {headgear && (
+                                            <p className="flex flex-col items-start">
+                                                <span className="text-xl font-bold uppercase mr-2" style={{ color: labelColor }}>Headgear:</span>
+                                                <span className="text-2xl font-extrabold uppercase tracking-wide leading-tight w-full" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.7)', color: accentColor, wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                                                    {headgear}
+                                                </span>
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -691,28 +702,12 @@
                                             height: '112px', /* Explicitly set height */
                                             borderRadius: '50%', /* Explicitly set border-radius to ensure perfect circle */
                                             backgroundColor: 'rgba(255,255,255,0.1)',
-                                            backgroundImage: customBadge1DataUrl && !customBadge1DataUrl.startsWith('data:image/svg+xml') ? `url(${customBadge1DataUrl})` : 'none',
-                                            backgroundSize: 'cover', /* Changed to cover for raster images */
+                                            backgroundImage: `url(${customBadge1DataUrl})`, // Always use background-image for consistency
+                                            backgroundSize: 'cover',
                                             backgroundPosition: 'center',
                                             backgroundRepeat: 'no-repeat'
                                         }}>
-                                        {customBadge1DataUrl && customBadge1DataUrl.startsWith('data:image/svg+xml') ? (
-                                            <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge1DataUrl }} />
-                                        ) : (
-                                            customBadge1DataUrl ? ( // If it's a raster image
-                                                <img src={customBadge1DataUrl} alt="Custom Badge 1" className="w-full h-full object-cover" />
-                                            ) : ( // Default Candle SVG Icon if no custom image
-                                                <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
-                                                    width="142.000000pt" height="142.000000pt" viewBox="0 0 142.000000 142.000000"
-                                                    preserveAspectRatio="xMidYMid meet" className="w-full h-full" fill="currentColor" style={{ color: labelColor }}>
-                                                    <g transform="translate(0.000000,142.000000) scale(0.100000,-0.100000)"
-                                                    stroke="none">
-                                                    <path d="M665 1385 c-16 -9 -41 -22 -55 -31 -18 -11 -40 -13 -83 -8 -71 8 -110 -7 -137 -51 -25 -41 -54 -60 -104 -69 -44 -8 -96 -54 -96 -84 0 -41 -31 -92 -70 -117 -51 -32 -63 -64 -55 -137 6 -51 4 -63 -19 -102 -34 -59 -34 -113 0 -163 23 -34 25 -44 20 -99 -8 -77 3 -107 53 -141 41 -29 71 -78 71 -116 0 -31 48 -75 90 -83 59 -11 81 -26 113 -77 28 -43 77 -60 131 -46 37 9 50 8 75 -5 17 -9 45 -23 61 -32 34 -18 101 -12 120 11 20 24 76 37 114 26 56 -15 101 2 133 50 29 44 59 63 115 73 40 7 75 42 84 85 10 51 34 91 65 110 52 32 63 56 61 138 -2 63 1 80 23 117 32 54 32 86 0 140 -22 37 -25 54 -23 117 2 77 -11 114 -44 125 -27 8 -78 73 -78 99 0 57 -61 115 -121 115 -13 0 -43 23 -79 60 l-57 60 -79 -3 c-68 -2 -83 1 -111 21 -42 30 -81 35 -118 17z m247 -108 c200 -73 350 -246 392 -449 20 -97 20 -149 0 -246 -43 -212 -199 -387 -409 -458 -67 -22 -97 -27 -185 -27 -174 0 -308 55 -430 176 -114 112 -169 237 -178 400 -9 183 46 326 178 458 80 81 179 139 282 165 85 22 267 12 350 -19z"/>
-                                                    <path d="M565 1276 c-188 -46 -350 -195 -415 -379 -31 -87 -38 -249 -15 -337 51 -197 203 -358 400 -421 90 -29 240 -31 330 -5 212 63 371 230 419 443 69 306 -123 618 -431 698 -68 18 -218 18 -288 1z m253 -40 c183 -40 345 -183 407 -361 23 -66 31 -212 15 -284 -21 -99 -75 -197 -149 -271 -207 -207 -531 -215 -746 -18 -121 110 -180 243 -179 403 1 153 50 269 159 381 133 134 312 189 493 150z"/>
-                                                    </g>
-                                                </svg>
-                                            )
-                                        )}
+                                        {/* No img tag or SVG rendering needed here as background-image is used */}
                                     </div>
 
                                     {/* Badge 2 */}
@@ -722,28 +717,12 @@
                                             height: '112px', /* Explicitly set height */
                                             borderRadius: '50%', /* Explicitly set border-radius to ensure perfect circle */
                                             backgroundColor: 'rgba(255,255,255,0.1)',
-                                            backgroundImage: customBadge2DataUrl && !customBadge2DataUrl.startsWith('data:image/svg+xml') ? `url(${customBadge2DataUrl})` : 'none',
-                                            backgroundSize: 'cover', /* Changed to cover for raster images */
+                                            backgroundImage: `url(${customBadge2DataUrl})`, // Always use background-image for consistency
+                                            backgroundSize: 'cover',
                                             backgroundPosition: 'center',
                                             backgroundRepeat: 'no-repeat'
                                         }}>
-                                        {customBadge2DataUrl && customBadge2DataUrl.startsWith('data:image/svg+xml') ? (
-                                            <div className="w-full h-full text-white" dangerouslySetInnerHTML={{ __html: customBadge2DataUrl }} />
-                                        ) : (
-                                            customBadge2DataUrl ? ( // If it's a raster image
-                                                <img src={customBadge2DataUrl} alt="Custom Badge 2" className="w-full h-full object-cover" />
-                                            ) : ( // Default Crucifix SVG Icon if no custom image
-                                                <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
-                                                    width="142.000000pt" height="142.000000pt" viewBox="0 0 142.000000 142.000000"
-                                                    preserveAspectRatio="xMidYMid meet" className="w-full h-full" fill="currentColor" style={{ color: labelColor }}>
-                                                    <g transform="translate(0.000000,142.000000) scale(0.100000,-0.100000)"
-                                                    stroke="none">
-                                                    <path d="M655 1384 c-85 -47 -84 -47 -131 -35 -58 15 -97 -1 -147 -62 -28 -35 -47 -48 -75 -53 -75 -13 -122 -60 -122 -121 0 -18 -17 -42 -60 -83 l-61 -58 3 -79 c3 -68 0 -82 -20 -110 -38 -53 -39 -91 -4 -157 28 -52 30 -62 25 -124 -5 -67 -5 -69 27 -98 75 -68 90 -87 90 -113 0 -34 34 -89 62 -100 13 -4 43 -15 68 -22 32 -10 51 -24 70 -53 39 -57 63 -67 141 -60 60 6 71 4 111 -20 57 -33 98 -33 154 0 40 24 52 26 104 20 72 -8 100 4 153 68 31 37 46 47 80 53 48 7 107 58 107 93 0 34 18 62 73 112 l52 46 -2 78 c-2 67 1 84 22 120 33 57 33 110 -1 155 -24 31 -25 39 -19 101 7 80 -7 115 -60 148 -39 24 -65 66 -65 104 0 37 -45 84 -88 92 -56 10 -87 30 -111 69 -29 50 -80 71 -136 55 -43 -12 -63 -7 -135 35 -33 19 -68 19 -105 -1z m81 -39 c18 -13 15 -14 -28 -15 -53 0 -60 6 -25 20 30 12 31 12 53 -5z m-226 -40 c0 -4 -67 -35 -77 -35 -2 0 1 9 7 20 7 13 21 20 40 20 17 0 30 -2 30 -5z m461 -5 c10 -6 19 -15 19 -20 0 -13 -8 -9 -35 17 -19 19 -35 38 -35 42 0 15 21 8 45 -17z m-139 -21 c123 -26 265 -115 337 -212 187 -250 167 -562 -49 -777 -120 -120 -252 -174 -420 -173 -241 2 -450 148 -542 378 -30 76 -32 87 -32 210 0 120 2 135 28 200 77 188 231 325 414 370 71 17 194 19 264 4z m333 -114 c14 -13 25 -32 25 -42 0 -13 -8 -9 -35 17 -19 19 -35 38 -35 42 0 15 21 8 45 -17z m-900 -15 c-17 -17 -31 -26 -33 -20 -5 15 27 50 46 50 11 0 7 -9 -13 -30z m-132 -200 c-17 -43 -33 -53 -33 -20 0 17 32 60 44 60 3 0 -3 -18 -11 -40z m1177 -1 c13 -30 7 -51 -9 -33 -4 5 -13 23 -19 41 -8 26 -8 31 3 27 7 -3 19 -19 25 -35z m-1230 -250 c0 -54 -14 -59 -25 -8 -6 25 6 59 21 59 2 0 4 -23 4 -51z m1280 -1 c0 -16 -4 -28 -10 -28 -5 0 -10 19 -10 43 0 31 3 38 10 27 5 -8 10 -27 10 -42z m-40 -223 c0 -17 -49 -75 -50 -58 0 7 7 28 17 47 16 34 33 40 33 11z m-1190 -15 c7 -17 10 -33 8 -36 -9 -9 -38 27 -38 47 0 29 16 23 30 -11z m145 -228 c-22 -5 -45 16 -45 41 0 19 2 18 31 -9 24 -23 27 -30 14 -32z m899 21 c-22 -29 -44 -41 -44 -23 0 14 51 62 58 55 3 -3 -3 -17 -14 -32z m-701 -130 c9 -3 17 -9 17 -14 0 -15 -37 -10 -54 7 -21 20 -20 28 2 19 9 -4 25 -10 35 -12z m517 8 c0 -12 -40 -41 -57 -41 -22 0 -14 19 15 34 32 18 42 19 42 7z m-242 -63 c-6 -16 -32 -22 -64 -14 -40 10 -27 26 22 26 32 0 44 -4 42 -12z"/>
-                                                    <path d="M572 1230 c-104 -27 -167 -64 -247 -145 -82 -82 -118 -144 -145 -251 -23 -89 -25 -154 -6 -239 65 -306 360 -491 665 -420 186 44 347 203 395 391 47 184 -7 387 -138 518 -140 140 -337 195 -524 146z m248 -31 c173 -40 331 -192 376 -363 22 -83 18 -219 -10 -297 -126 -358 -592 -457 -849 -180 -116 126 -163 306 -122 466 47 178 196 327 370 370 63 16 176 18 235 4z"/>
-                                                    </g>
-                                                </svg>
-                                            )
-                                        )}
+                                        {/* No img tag or SVG rendering needed here as background-image is used */}
                                     </div>
                                 </div>
                             </div>
